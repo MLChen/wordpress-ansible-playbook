@@ -1,0 +1,5 @@
+[webservers]
+example.com ansible_host=your_server_ip ansible_user=your_ssh_user
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

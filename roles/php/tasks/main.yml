@@ -1,0 +1,39 @@
+---
+- name: Add Ondrej PHP repository
+  ansible.builtin.apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+  become_user: "root"
+
+- name: Update apt cache after adding Ondrej PHP repository
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install PHP packages and extensions
+  ansible.builtin.apt:
+    name: "{{ php_packages }}"
+    state: present        
+
+- name: Configure PHP-FPM
+  ansible.builtin.template:
+    src: www-conf.j2
+    dest: /etc/php/8.3/fpm/pool.d/www.conf
+    validate: '/usr/sbin/php-fpm8.3 -t -c %s'
+  notify: Restart PHP-FPM
+
+- name: Configure PHP.ini
+  ansible.builtin.template:
+    src: php.ini.j2
+    dest: /etc/php/8.3/fpm/php.ini
+  notify: Restart PHP-FPM
+
+- name: Create PHP-FPM logs directories
+  ansible.builtin.file:
+    path: /var/log/php-fpm/
+    state: directory
+    recurse: yes
+
+- name: Configure log rotation for PHP-FPM
+  ansible.builtin.template:
+    src: php-fpm-logrotate.j2
+    dest: /etc/logrotate.d/php-fpm

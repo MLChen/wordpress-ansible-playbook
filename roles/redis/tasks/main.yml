@@ -1,0 +1,30 @@
+---
+- name: Install Redis server
+  apt:
+    name: redis-server
+    state: present
+
+- name: Start and enable Redis service
+  ansible.builtin.service:
+    name: redis-server
+    state: started
+    enabled: yes
+
+- name: Configure UFW for Redis
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop:
+    - { port: '6379', proto: 'tcp' }
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Deploy Redis configuration template
+  ansible.builtin.template:
+    src: redis.conf.j2
+    dest: /etc/redis/redis.conf
+    mode: '0644'
+  notify: Restart Redis

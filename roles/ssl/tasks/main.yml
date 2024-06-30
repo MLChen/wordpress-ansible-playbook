@@ -1,0 +1,53 @@
+---
+- name: Install SSL packages
+  ansible.builtin.apt:
+    name: "{{ ssl_packages }}"
+    state: present   
+
+- name: Create domains.txt
+  ansible.builtin.template:
+    src: domains-txt.j2
+    dest: /etc/dehydrated/domains.txt
+
+- name: Create dehydrated config file
+  ansible.builtin.template:
+    src: dehydrated-config.j2
+    dest: /etc/dehydrated/config
+
+- name: Create Python virtual environment
+  ansible.builtin.command: python3 -m venv /opt/lexicon-venv
+  args:
+    creates: /opt/lexicon-venv
+
+- name: Install dns-lexicon with providers in virtual environment
+  ansible.builtin.pip:
+    name:
+      - dns-lexicon[route53]
+      - dns-lexicon[cloudflare]
+      - dns-lexicon[godaddy]
+      - dns-lexicon[digitalocean]
+    virtualenv: /opt/lexicon-venv
+    state: present
+
+- name: Copy lexicon-dehydrated hook script
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/AnalogJ/lexicon/master/examples/dehydrated.default.sh
+    dest: /usr/sbin/lexicon-dehydrated.default.sh
+    mode: '0755'
+
+- name: Accept dehydrated terms
+  ansible.builtin.command: dehydrated --register --accept-terms
+  args:
+    creates: /etc/dehydrated/accounts/*/account_key.pem
+
+- name: Request SSL certificates
+  ansible.builtin.shell: |
+    PROVIDER={{ lexicon_provider }} LEXICON_{{ PROVIDER }}_USERNAME={{ lexicon_provider_username }} LEXICON_{{ PROVIDER }}_TOKEN={{ lexicon_provider_token }} dehydrated -c -k /usr/sbin/lexicon-dehydrated.default.sh --challenge dns-01
+  args:
+    creates: /etc/dehydrated/certs/*/cert.pem
+
+- name: Setup cron job for certificate renewal
+  ansible.builtin.template:
+    src: renew_certificates.j2
+    dest: /etc/cron.weekly/renew_certificates
+    mode: '0755'

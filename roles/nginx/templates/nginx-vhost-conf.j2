@@ -1,0 +1,116 @@
+# /etc/nginx/sites-enabled/
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ item.domain }};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{ item.domain }};
+    error_log /var/log/nginx/{{ item.blog }}_error.log warn;
+    access_log /var/log/nginx/{{ item.blog }}_access.log combined buffer=16k;
+
+    root {{ item.root_dir }};
+    index index.php index.html index.htm index.nginx-debian.html;
+
+    etag on;
+
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305';
+    ssl_certificate /etc/dehydrated/certs/{{ item.domain }}/fullchain.pem;
+    ssl_certificate_key /etc/dehydrated/certs/{{ item.domain }}/privkey.pem;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy strict-origin-when-cross-origin;
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+    }
+
+    location ~* \.(db|db\.sig|gz|files|sig) {
+        add_header Cache-Control "public, max-age=3600, must-revalidate, no-transform";
+    }
+
+    location ~* \.(tar|zst|xz|xz\.sig|zst\.sig) {
+        add_header Cache-Control "public, max-age=604800, immutable";
+    }
+
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        #fastcgi_pass 127.0.0.1:9000;        
+        include snippets/fastcgi-php.conf;
+        fastcgi_read_timeout 300;
+
+        # FastCGI 快取設定
+        fastcgi_cache {{ item.domain }};
+        fastcgi_cache_valid 200 301 302 1d;
+        fastcgi_cache_min_uses 1;
+        fastcgi_cache_lock on;
+        fastcgi_cache_bypass $skip_cache $cookie_user_logged_in;
+        fastcgi_no_cache $skip_cache $cookie_user_logged_in;
+
+        # 可以加入除錯用的標頭
+        add_header Nginx-Cache "$upstream_cache_status";
+        add_header X-Cache "$upstream_cache_status From $host";
+        add_header X-FastCGI-Cache "$upstream_cache_status";
+        # add_header Cache-Control  max-age=0;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+        add_header Last-Modified $date_gmt;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location /purge_cache/ {
+        allow 127.0.0.1;
+        deny all;
+        fastcgi_cache_purge {{ item.domain }} $scheme$request_method$host$request_uri;
+    }
+
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root {{ item.root_dir }};
+    }
+
+    set $skip_cache 0;
+    
+    # POST 請求不用快取
+	if ($request_method = POST) {
+        set $skip_cache 1;
+    }
+
+    # 若有 query 參數的網址不用快取
+    if ($query_string != "") {
+        set $skip_cache 1;
+    }
+
+    # 特殊的網址不用快取
+    if ($request_uri ~* "(/wp-admin/|/xmlrpc.php|/wp-(app|cron|login|register|mail).php|wp-.*.php|/feed/|index.php|wp-comments-popup.php|wp-links-opml.php|wp-locations.php|sitemap(_index)?.xml|[a-z0-9_-]+-sitemap([0-9]+)?.xml)") {
+        set $skip_cache 1;
+    }
+
+    # 已登入使用者、留言者不用快取
+    if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
+        set $skip_cache 1;
+    }
+
+    #正在維護模式中也略過
+    if (-f "$document_root/.maintenance") {
+        set $skip_cache 1;
+    }
+}

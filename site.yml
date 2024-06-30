@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  become: true
+  vars_files:
+    - vars/main.yml
+
+  roles:
+    - { role: common, tags: ['common'] }
+    - { role: nginx, tags: ['nginx'] }
+    - { role: mysql, tags: ['mysql'] }      
+    - { role: php, tags: ['php'] }
+    - { role: redis, tags: ['redis'] }      
+    - { role: wordpress, tags: ['wordpress'] }
+    - { role: ssl, tags: ['ssl'] }
+    - { role: users, tags: ['users'] }
+
+  tasks:
+    - name: Ensure all handlers are run
+      meta: flush_handlers
+      tags: ['always']

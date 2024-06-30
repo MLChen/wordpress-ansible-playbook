@@ -1,0 +1,6 @@
+#!/bin/bash
+{% for item in web %}
+mkdir -p /var/run/cache/{{ item.blog }}
+{% endfor %}
+chown -R www-data:www-data /var/run/cache/
+systemctl restart nginx

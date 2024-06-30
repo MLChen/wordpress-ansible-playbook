@@ -1,0 +1,4 @@
+---
+nginx_packages:
+  - nginx-full
+  - libnginx-mod-http-cache-purge

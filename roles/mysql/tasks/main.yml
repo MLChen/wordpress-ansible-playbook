@@ -1,0 +1,59 @@
+---
+- name: Install MySQL server
+  ansible.builtin.apt:
+    name: "{{ mysql_packages }}"
+    state: present
+
+- name: Start and enable MySQL service
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Create .my.cnf file with root password credentials
+  ansible.builtin.template:
+    src: my.cnf.j2
+    dest: /root/.my.cnf
+    mode: '0600'
+
+- name: Set MySQL root password
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    column_case_sensitive: false
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create wordpress database
+  mysql_db:
+    name: "{{ item.blog_db }}"
+    state: present
+  loop: "{{ database }}"
+
+- name: Create user for wordpress database
+  mysql_user:
+    name: "{{ item.mysql_user }}"
+    password: "{{ item.mysql_password }}"
+    column_case_sensitive: false    
+    priv: "{{ item.blog_db }}.*:ALL"
+    host: "%"
+    state: present
+  loop: "{{ database }}"
+
+- name: Configure UFW for MySQL
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop:
+    - { port: '3306', proto: 'tcp' }
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Deploy MySQL configuration template
+  ansible.builtin.template:
+    src: my-cnf.j2
+    dest: /etc/mysql/my.cnf
+    mode: '0644'
+  notify: Restart MySQL

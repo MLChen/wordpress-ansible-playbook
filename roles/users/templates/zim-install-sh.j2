@@ -1,0 +1,6 @@
+#!/bin/bash
+curl -fsSL https://raw.githubusercontent.com/zimfw/install/master/install.zsh | zsh
+echo 'ZIM_HOME=/home/{{ item.username }}/.zim' | tee -a /home/{{ item.username }}/.zshrc
+echo 'zmodule romkatv/powerlevel10k' | tee -a /home/{{ item.username }}/.zimrc
+zimfw install
+chsh -s $(which zsh)

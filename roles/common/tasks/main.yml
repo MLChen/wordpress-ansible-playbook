@@ -1,0 +1,86 @@
+---
+- name: Check if swapfile exists
+  ansible.builtin.stat:
+    path: /swapfile
+  register: swapfile
+
+- name: Create swap file
+  ansible.builtin.command: dd if=/dev/zero of=/swapfile bs=1M count=4096
+  args:
+    creates: /swapfile
+  when: not swapfile.stat.exists
+
+- name: Set correct permissions on swap file
+  ansible.builtin.file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: '0600'
+  when: not swapfile.stat.exists
+
+- name: Setup swap area
+  ansible.builtin.command: mkswap /swapfile
+  when: not swapfile.stat.exists
+
+- name: Enable swap file
+  ansible.builtin.command: swapon /swapfile
+  when: not swapfile.stat.exists
+
+- name: Ensure swap file entry in fstab
+  ansible.posix.mount:
+    name: none
+    src: /swapfile
+    fstype: swap
+    opts: sw
+    passno: 0
+    dump: 0
+    state: present
+
+- name: Set swappiness value
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: '10'
+    state: present
+
+- name: Update and upgrade apt packages
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Set timezone to Asia/Taipei
+  community.general.timezone:
+    name: Asia/Taipei
+
+- name: Synchronize time with time.stdtime.gov.tw
+  ansible.builtin.command: ntpdate time.stdtime.gov.tw
+  changed_when: false
+
+- name: Write system time to hardware clock
+  ansible.builtin.command: hwclock -w
+  changed_when: false
+
+- name: Add daily time synchronization to cron
+  ansible.builtin.cron:
+    name: "Daily time sync with time.stdtime.gov.tw"
+    minute: "0"
+    hour: "0"
+    job: "/usr/sbin/ntpdate time.stdtime.gov.tw > /dev/null"
+
+- name: Configure UFW for Minecraft
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop:
+    - { port: '25565', proto: 'tcp' }
+    - { port: '19132', proto: 'udp' }
+    - { port: '19133', proto: 'udp' }
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled

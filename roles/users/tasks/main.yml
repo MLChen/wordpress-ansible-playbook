@@ -1,0 +1,37 @@
+---
+- name: Manage user accounts
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512','A512') }}"
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    create_home: yes
+  loop: "{{ new_users }}"
+  no_log: true
+
+- name: Copy root SSH settings to user accounts
+  ansible.builtin.copy:
+    src: /root/.ssh/
+    dest: "/home/{{ item.username }}/.ssh/"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0700'
+  loop: "{{ new_users }}"
+
+- name: Set correct authorized_keys permissions
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.ssh/authorized_keys"
+    mode: '0600'
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+  loop: "{{ new_users }}"
+
+- name: Install Script for Zimfw
+  ansible.builtin.template:
+    src: zim-install-sh.j2
+    dest: "/tmp/zim_install_{{ item.username }}.sh"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0755'
+  loop: "{{ new_users }}"

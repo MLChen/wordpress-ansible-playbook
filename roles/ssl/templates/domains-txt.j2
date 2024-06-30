@@ -1,0 +1,5 @@
+# /etc/dehydrated/domains.txt
+
+{% for domain in dehydrated_domains %}
+*.{{ domain.main }} > {{ domain.blog }}
+{% endfor %}

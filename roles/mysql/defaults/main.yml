@@ -1,0 +1,5 @@
+---
+mysql_packages:
+  - mysql-server
+  - python3-pymysql
+  - python3-mysqldb

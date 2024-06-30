@@ -1,0 +1,39 @@
+web:
+  - domain: "your_web_domain_1"     # blog.xxx.org
+    root_dir: "your_web_path_1"     # /var/www/xxx_blog
+    blog: "your_web_folder_name_1"  # xxx_blog
+  - domain: "your_web_domain_2"
+    root_dir: "your_web_path_2"
+    blog: "your_web_folder_name_2"
+
+database:
+  - blog_db: "your_web_db_1"      # xxx_wordpress
+    mysql_host: "your_db_host_1"  # localhost:3306
+    mysql_user: "your_db_user_1"
+    mysql_password: "your_db_user_password_1"
+  - blog_db: "your_web_db_1"
+    mysql_host: "your_db_host_1"
+    mysql_user: "your_db_user_1"
+    mysql_password: "your_db_user_password_1"
+
+mysql_root_password: "your_db_root_password"
+
+dehydrated_domains: # domains.txt
+  - main: "your_domain_1"       # xxx.org
+    blog: "your_sub_doamain_1"  # blog.xxx.org
+  - main: "your_domain_2"
+    blog: "your_sub_doamain_2"
+
+lexicon_provider: "your_dns_provider" # route53
+lexicon_provider_username: "your_provider_username"
+lexicon_provider_token: "your_provider_secret_key"
+PROVIDER: "YOUR_PROVIDER"
+# PROVIDER: "CLOUDFLARE"
+
+new_users:
+  - username: "your_ubuntu_user_1"
+    password: "your_ubuntu_password_1"
+  - username: "your_ubuntu_user_2"
+    password: "your_ubuntu_password_2"    
+
+user: "your_ubuntu_user"

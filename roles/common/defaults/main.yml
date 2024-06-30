@@ -1,0 +1,17 @@
+---
+common_packages:
+  - util-linux-extra
+  - python3-pip
+  - python3-venv
+  - default-jdk
+  - zsh
+  - curl
+  - expect
+  - socat
+  - mysql-client
+  - git
+  - zip
+  - htop
+  - weechat
+  - ntpdate
+  - ntp

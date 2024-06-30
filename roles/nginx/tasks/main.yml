@@ -1,0 +1,70 @@
+---
+- name: Install Nginx packages and mods
+  ansible.builtin.apt:
+    name: "{{ nginx_packages }}"
+    state: present    
+
+- name: Configure Nginx
+  ansible.builtin.template:
+    src: nginx-conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: Restart Nginx
+
+- name: Configure Nginx for Blogs
+  ansible.builtin.template:
+    src: nginx-vhost-conf.j2
+    dest: "/etc/nginx/sites-available/{{ item.blog }}"
+  loop: "{{ web }}"
+  notify: Restart Nginx
+
+- name: Enable Nginx sites
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ item.blog }}"
+    dest: "/etc/nginx/sites-enabled/{{ item.blog }}"
+    state: link
+  loop: "{{ web }}"
+  notify: Restart Nginx
+
+- name: Create Nginx FastCGI Cache directories
+  ansible.builtin.file:
+    path: "/var/run/cache/{{ item.blog }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  loop: "{{ web }}"
+
+- name: Create start-fastcgi.sh script
+  ansible.builtin.template:
+    src: start-fastcgi-sh.j2
+    dest: /var/www/start-fastcgi.sh
+    mode: '0755'
+
+- name: Create /etc/rc.local file
+  ansible.builtin.template:
+    src: rc-local.j2
+    dest: /etc/rc.local
+    mode: '0755'
+
+- name: Create rc-local.service file
+  ansible.builtin.template:
+    src: rc-local-service.j2
+    dest: /etc/systemd/system/rc-local.service
+    mode: '0644'
+
+- name: Configure log rotation for Nginx
+  ansible.builtin.template:
+    src: nginx-logrotate.j2
+    dest: /etc/logrotate.d/nginx
+
+- name: Configure UFW rules
+  community.general.ufw:
+    rule: allow
+    name: "{{ item }}"
+  loop:
+    - 'Nginx Full'
+    - 'OpenSSH'
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
