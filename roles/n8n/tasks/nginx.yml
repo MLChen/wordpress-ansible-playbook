@@ -1,23 +1,22 @@
 ---
-- name: Check if nginx is installed
-  ansible.builtin.stat:
-    path: /etc/nginx
-  register: nginx_installed
-
 - name: Create Nginx configuration for n8n
   ansible.builtin.template:
     src: nginx-n8n.conf.j2
-    dest: /etc/nginx/sites-available/n8n.conf
+    dest: "/etc/nginx/sites-available/{{ n8n_web[0].domain }}.conf"
     owner: root
     group: root
     mode: '0644'
-  when: nginx_installed.stat.exists
   notify: reload nginx
 
-- name: Enable Nginx site
+- name: Enable Nginx site for n8n
   ansible.builtin.file:
-    src: /etc/nginx/sites-available/n8n.conf
-    dest: /etc/nginx/sites-enabled/n8n.conf
+    src: "/etc/nginx/sites-available/{{ n8n_web[0].domain }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ n8n_web[0].domain }}.conf"
     state: link
-  when: nginx_installed.stat.exists
+  notify: reload nginx
+
+- name: Remove default Nginx site if exists
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
   notify: reload nginx

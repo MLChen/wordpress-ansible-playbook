@@ -1,10 +1,10 @@
 ---
 - name: Ensure backup directory exists
   ansible.builtin.file:
-    path: "{{ n8n_backup_dir }}"
+    path: "{{ n8n.backup_dir }}"
     state: directory
-    owner: "{{ n8n_user }}"
-    group: "{{ n8n_group }}"
+    owner: "{{ n8n.user }}"
+    group: "{{ n8n.group }}"
     mode: '0750'
 
 - name: Copy database backup script
@@ -13,13 +13,13 @@
       #!/bin/bash
       
       # Variables
-      BACKUP_DIR="{{ n8n_backup_dir }}"
-      DB_NAME="{{ n8n_db_name }}"
-      DB_USER="{{ n8n_db_user }}"
-      DB_PASS="{{ n8n_db_password }}"
-      DB_HOST="{{ n8n_db_host }}"
+      BACKUP_DIR="{{ n8n.backup_dir }}"
+      DB_NAME="{{ n8n_database[0].db_name }}"
+      DB_USER="{{ n8n_database[0].mysql_user }}"
+      DB_PASS="{{ n8n_database[0].mysql_password }}"
+      DB_HOST="{{ n8n_database[0].mysql_host }}"
       DATE=$(date +"%Y-%m-%d_%H-%M-%S")
-      RETENTION_DAYS={{ n8n_backup_retention }}
+      RETENTION_DAYS={{ n8n.backup_retention }}
       
       # Create backup file
       mysqldump -h ${DB_HOST} -u ${DB_USER} -p${DB_PASS} ${DB_NAME} > ${BACKUP_DIR}/n8n_${DATE}.sql
@@ -65,5 +65,5 @@
     hour: "3"
     minute: "30"
     job: "/usr/local/bin/backup-n8n.sh"
-    user: "{{ n8n_user }}"
+    user: "{{ n8n.user }}"
     state: present

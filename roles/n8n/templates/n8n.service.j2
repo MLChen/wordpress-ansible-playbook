@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User={{ n8n_user }}
-Group={{ n8n_group }}
-WorkingDirectory={{ n8n_home }}
-EnvironmentFile={{ n8n_home }}/.n8n/.env
-ExecStart=/usr/bin/n8n start
+User={{ n8n.user }}
+Group={{ n8n.group }}
+WorkingDirectory={{ n8n.home }}
+EnvironmentFile={{ n8n.data_dir }}/.env
+ExecStart=/usr/local/bin/n8n start
 Restart=on-failure
 RestartSec=10
 StandardOutput=syslog

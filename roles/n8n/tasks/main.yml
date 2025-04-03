@@ -13,5 +13,5 @@
 
 - name: Include backup tasks
   include_tasks: backup.yml
-  when: n8n_backup_enabled
+  when: n8n.backup_enabled | bool
   tags: ['n8n', 'n8n_backup']

@@ -1,14 +1,14 @@
 ---
 - name: Ensure n8n group exists
   ansible.builtin.group:
-    name: "{{ n8n_group }}"
+    name: "{{ n8n.group }}"
     state: present
 
 - name: Ensure n8n user exists
   ansible.builtin.user:
-    name: "{{ n8n_user }}"
-    group: "{{ n8n_group }}"
-    home: "{{ n8n_home }}"
+    name: "{{ n8n.user }}"
+    group: "{{ n8n.group }}"
+    home: "{{ n8n.home }}"
     shell: "/bin/bash"
     state: present
 
@@ -25,35 +25,29 @@
 
 - name: Install required packages
   ansible.builtin.apt:
-    name:
-      - nodejs
-      - build-essential
-      - python3-pip
-      - python3-mysqldb
-      - jq
-      - curl
+    name: "{{ n8n_packages }}"
     update_cache: yes
     state: present
 
 - name: Check if n8n is installed
-  ansible.builtin.command: npm list -g n8n
-  register: n8n_check_installed
+  ansible.builtin.command: which n8n
+  register: n8n_check
   changed_when: false
   failed_when: false
 
 - name: Install n8n globally
   ansible.builtin.command: npm install -g n8n
-  when: n8n_check_installed.rc != 0 or "n8n" not in n8n_check_installed.stdout
+  when: n8n_check.rc != 0
 
 - name: Ensure n8n data directory exists
   ansible.builtin.file:
-    path: "{{ n8n_data_dir }}"
+    path: "{{ n8n.data_dir }}"
     state: directory
-    owner: "{{ n8n_user }}"
-    group: "{{ n8n_group }}"
+    owner: "{{ n8n.user }}"
+    group: "{{ n8n.group }}"
     mode: '0750'
 
 - name: Allow n8n to bind to privileged ports
   ansible.builtin.command: setcap 'cap_net_bind_service=+ep' $(which node)
-  when: n8n_port < 1024
+  when: n8n.port < 1024
   changed_when: true
