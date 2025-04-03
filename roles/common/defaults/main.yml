@@ -17,5 +17,3 @@ common_packages:
   - ntp
   - build-essential
   - jq
-  - certbot
-  - python3-certbot-nginx

@@ -21,18 +21,3 @@
     state: link
   when: nginx_installed.stat.exists
   notify: reload nginx
-
-- name: Check if Let's Encrypt cert for n8n exists
-  ansible.builtin.stat: 
-    path: "/etc/letsencrypt/live/{{ n8n.domain }}/fullchain.pem"
-  register: cert_exists
-
-- name: Request SSL certificate for n8n if it doesn't exist
-  ansible.builtin.command: >
-    certbot --nginx -d {{ n8n.domain }} --non-interactive --agree-tos --email admin@mlchen.org
-  when: 
-    - nginx_installed.stat.exists
-    - not cert_exists.stat.exists
-  register: certbot_result
-  changed_when: "'Congratulations!' in certbot_result.stdout"
-  notify: reload nginx
