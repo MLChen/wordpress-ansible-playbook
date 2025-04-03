@@ -1,0 +1,25 @@
+[Unit]
+Description=n8n workflow automation
+After=network.target
+
+[Service]
+Type=simple
+User={{ n8n_user }}
+Group={{ n8n_group }}
+WorkingDirectory={{ n8n_home }}
+EnvironmentFile={{ n8n_home }}/.n8n/.env
+ExecStart=/usr/bin/n8n start
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=n8n
+
+# Hardening
+PrivateTmp=true
+ProtectSystem=full
+NoNewPrivileges=true
+PrivateDevices=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,58 @@
+---
+- name: Create MySQL database for n8n
+  community.mysql.mysql_db:
+    name: "{{ n8n.db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  register: db_creation
+
+- name: Set MySQL user privileges
+  community.mysql.mysql_user:
+    name: "{{ n8n.db_user }}"
+    password: "{{ n8n.db_password }}"
+    priv: "{{ n8n.db_name }}.*:ALL"
+    host: "{{ n8n_db_host if n8n_db_host != 'localhost' else 'localhost' }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+
+- name: Create n8n environment file directory
+  ansible.builtin.file:
+    path: "{{ n8n_home }}/.n8n"
+    state: directory
+    owner: "{{ n8n_user }}"
+    group: "{{ n8n_group }}"
+    mode: '0750'
+
+- name: Create n8n environment file
+  ansible.builtin.template:
+    src: n8n.env.j2
+    dest: "{{ n8n_home }}/.n8n/.env"
+    owner: "{{ n8n_user }}"
+    group: "{{ n8n_group }}"
+    mode: '0640'
+  notify: restart n8n
+
+- name: Create n8n systemd service
+  ansible.builtin.template:
+    src: n8n.service.j2
+    dest: /etc/systemd/system/n8n.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart n8n
+
+- name: Ensure UFW allows n8n access
+  community.general.ufw:
+    rule: allow
+    port: "{{ n8n_port }}"
+    proto: tcp
+  when: n8n_port is defined
+
+- name: Enable and start n8n service
+  ansible.builtin.systemd:
+    name: n8n
+    state: started
+    enabled: yes
+    daemon_reload: yes

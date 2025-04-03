@@ -1,0 +1,17 @@
+---
+- name: Include installation tasks
+  include_tasks: install.yml
+  tags: ['n8n', 'n8n_install']
+
+- name: Include configuration tasks
+  include_tasks: configure.yml
+  tags: ['n8n', 'n8n_configure']
+
+- name: Include nginx configuration tasks
+  include_tasks: nginx.yml
+  tags: ['n8n', 'n8n_nginx']
+
+- name: Include backup tasks
+  include_tasks: backup.yml
+  when: n8n_backup_enabled
+  tags: ['n8n', 'n8n_backup']

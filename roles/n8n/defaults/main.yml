@@ -1,0 +1,42 @@
+---
+# Node.js 版本
+n8n_nodejs_version: "20.x"
+
+# n8n 配置
+n8n_domain: "n8n.mlchen.org"
+n8n_protocol: "https"
+n8n_port: 5678
+n8n_user: "n8n"
+n8n_group: "n8n"
+n8n_home: "/home/n8n"
+n8n_data_dir: "{{ n8n_home }}/.n8n"
+
+# 資料庫配置
+n8n_db_type: "mysqldb"
+n8n_db_name: "n8n"
+n8n_db_user: "n8n"
+n8n_db_password: "change_me_please"
+n8n_db_host: "localhost"
+n8n_db_port: 3306
+
+# 基本認證配置
+n8n_basic_auth_active: true
+n8n_basic_auth_user: "admin"
+n8n_basic_auth_password: "change_me_please"
+
+# 備份配置
+n8n_backup_enabled: true
+n8n_backup_dir: "/var/backups/n8n"
+n8n_backup_retention: 7  # 保留天數
+
+# 其他配置參數
+n8n_webhook_url: "https://{{ n8n_domain }}"
+n8n_log_level: "info"
+n8n_encryption_key: "change_me_please"  # 用於加密資料庫中的憑證
+
+# Node.js 記憶體限制
+n8n_node_options: "--max-old-space-size=500"
+
+# 執行緒配置 - 根據伺服器核數調整
+n8n_execution_process: "main"  # main, own (單獨流程)
+n8n_max_execution_processes: 2

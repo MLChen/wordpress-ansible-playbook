@@ -1,0 +1,81 @@
+server {
+    listen 80;
+    server_name {{ n8n.domain }};
+    
+    # 如果憑證存在則重定向到 HTTPS
+    {% if n8n_protocol == 'https' %}
+    location / {
+        return 301 https://$host$request_uri;
+    }
+    {% else %}
+    # 反向代理到 n8n
+    location / {
+        proxy_pass http://localhost:{{ n8n_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_buffering off;
+        proxy_read_timeout 90s;
+    }
+    {% endif %}
+
+    # 禁止訪問 .git 等目錄
+    location ~ /\. {
+        deny all;
+        return 404;
+    }
+}
+
+{% if n8n_protocol == 'https' %}
+# HTTPS 配置
+server {
+    listen 443 ssl http2;
+    server_name {{ n8n.domain }};
+
+    # SSL 憑證配置（將由 Certbot 自動添加）
+    #ssl_certificate /etc/letsencrypt/live/{{ n8n.domain }}/fullchain.pem;
+    #ssl_certificate_key /etc/letsencrypt/live/{{ n8n.domain }}/privkey.pem;
+
+    # SSL 優化
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
+
+    # HSTS (1年，包含子域名)
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # 其他安全性頭信息
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-XSS-Protection "1; mode=block";
+
+    # 反向代理到 n8n
+    location / {
+        proxy_pass http://localhost:{{ n8n_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_buffering off;
+        proxy_read_timeout 90s;
+    }
+
+    # 禁止訪問 .git 等目錄
+    location ~ /\. {
+        deny all;
+        return 404;
+    }
+}
+{% endif %}

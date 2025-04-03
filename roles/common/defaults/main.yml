@@ -15,3 +15,7 @@ common_packages:
   - weechat
   - ntpdate
   - ntp
+  - build-essential
+  - jq
+  - certbot
+  - python3-certbot-nginx

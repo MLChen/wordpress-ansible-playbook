@@ -10,6 +10,7 @@
     - { role: mysql, tags: ['mysql'] }      
     - { role: php, tags: ['php'] }
     - { role: redis, tags: ['redis'] }      
+    - { role: n8n, tags: ['n8n'] }
     - { role: wordpress, tags: ['wordpress'] }
     - { role: ssl, tags: ['ssl'] }
     - { role: users, tags: ['users'] }

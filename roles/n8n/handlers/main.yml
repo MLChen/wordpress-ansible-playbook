@@ -1,0 +1,13 @@
+---
+- name: restart n8n
+  ansible.builtin.systemd:
+    name: n8n
+    state: restarted
+    daemon_reload: yes
+  become: true
+
+- name: reload nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded
+  become: true
